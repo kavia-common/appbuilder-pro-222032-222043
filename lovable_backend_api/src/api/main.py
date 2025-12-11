@@ -6,7 +6,13 @@ from src.routers.auth import router as auth_router
 from src.routers.projects import router as projects_router
 from src.routers.chat import router as chat_router
 from src.routers.generate import router as generate_router
-from src.routers.project_files import router as project_files_router, versions_router as project_versions_router, export_router as export_router
+from src.routers.project_files import (
+    router as project_files_router,
+    versions_router as project_versions_router,
+    export_router as export_router,
+)
+from src.routers.preview import router as preview_router
+from src.routers.deploy import router as deploy_router
 
 # Initialize settings (loads from .env if present)
 settings = get_settings()
@@ -15,7 +21,8 @@ app = FastAPI(
     title="Lovable Backend API",
     description=(
         "Handles AI code generation, chat logic, preview, export, and deployment APIs. "
-        "WebSocket streaming is available for generation at /ws/generate/{task_id} (send Authorization header)."
+        "WebSocket streaming is available for generation at /ws/generate/{task_id} (send Authorization header). "
+        "Preview reload WS is available at /preview/ws/preview/{project_id} or /ws/preview/{project_id} depending on router mount."
     ),
     version="0.1.0",
     openapi_tags=[
@@ -27,6 +34,8 @@ app = FastAPI(
         {"name": "export", "description": "Export current project files as ZIP"},
         {"name": "chat", "description": "Chat sessions and messages"},
         {"name": "generation", "description": "Start AI generation and stream results over WebSocket"},
+        {"name": "preview", "description": "Serve project files for preview and WebSocket reload"},
+        {"name": "deploy", "description": "Deployment stubs for providers with basic status"},
     ],
 )
 
@@ -47,6 +56,8 @@ app.include_router(project_versions_router)
 app.include_router(export_router)
 app.include_router(chat_router)
 app.include_router(generate_router)
+app.include_router(preview_router)
+app.include_router(deploy_router)
 
 # PUBLIC_INTERFACE
 @app.get("/", tags=["health"], summary="Health Check", description="Simple health check endpoint to verify the API is running.")
@@ -64,17 +75,21 @@ def health_check():
         "- Start a task with POST /generate to receive task_id and websocket_url.\n"
         "- Connect to /ws/generate/{task_id} and include 'Authorization: Bearer token-<email>' header.\n"
         "- Server streams JSON lines with fields: type and data.\n"
+        "\nPreview:\n"
+        "- Connect to /preview/ws/preview/{project_id} or /ws/preview/{project_id} with same Authorization header for reload events.\n"
     ),
 )
 def websocket_usage():
     """Return a short usage guide for WebSocket streaming."""
     return {
-        "websocket_endpoint": "/ws/generate/{task_id}",
+        "websocket_endpoint_generation": "/ws/generate/{task_id}",
+        "websocket_endpoint_preview": "/preview/ws/preview/{project_id}",
         "auth": "Send Authorization: Bearer token-<email> header when connecting.",
         "flow": [
             "POST /generate with prompt",
             "Receive task_id and websocket_url",
             "Connect to WS and read events until end",
         ],
-        "event_types": ["status", "token", "file_diff", "error", "end"],
+        "event_types_generation": ["status", "token", "file_diff", "error", "end"],
+        "event_types_preview": ["reload"],
     }

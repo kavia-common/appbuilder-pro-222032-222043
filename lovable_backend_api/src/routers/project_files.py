@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from src.routers.auth import UserPublic, get_current_user
 from src.services.project_files_service import FileRecord, VersionRecord, project_files_service
+from src.services.preview_service import preview_service
 
 router = APIRouter(
     prefix="/projects/{project_id}/files",
@@ -78,6 +79,8 @@ async def create_or_update_file(
     rec = project_files_service.upsert_file_by_path(
         current_user.email, project_id, payload.path, payload.content, payload.is_binary
     )
+    # Broadcast reload to preview clients
+    await preview_service.broadcast_reload(current_user.email, project_id, reason="file_upsert")
     return _to_out(rec)
 
 
@@ -97,6 +100,8 @@ async def get_file(
     rec = project_files_service.get_file(current_user.email, project_id, file_id)
     if not rec:
         raise HTTPException(status_code=404, detail="File not found")
+    # Broadcast reload to preview clients
+    await preview_service.broadcast_reload(current_user.email, project_id, reason="file_update")
     return _to_out(rec)
 
 
@@ -146,6 +151,7 @@ async def delete_file(
     ok = project_files_service.delete_file(current_user.email, project_id, file_id)
     if not ok:
         raise HTTPException(status_code=404, detail="File not found")
+    await preview_service.broadcast_reload(current_user.email, project_id, reason="file_delete")
     return None
 
 
@@ -223,6 +229,7 @@ async def restore_version(
         files, _ = project_files_service.restore_version(current_user.email, project_id, version_number)
     except ValueError:
         raise HTTPException(status_code=404, detail="Version not found")
+    await preview_service.broadcast_reload(current_user.email, project_id, reason="version_restore")
     return [_to_out(f) for f in files]
 
 
