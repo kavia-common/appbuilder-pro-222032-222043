@@ -6,6 +6,7 @@ from src.routers.auth import router as auth_router
 from src.routers.projects import router as projects_router
 from src.routers.chat import router as chat_router
 from src.routers.generate import router as generate_router
+from src.routers.project_files import router as project_files_router, versions_router as project_versions_router, export_router as export_router
 
 # Initialize settings (loads from .env if present)
 settings = get_settings()
@@ -21,6 +22,9 @@ app = FastAPI(
         {"name": "health", "description": "Health and diagnostics"},
         {"name": "auth", "description": "Authentication (dummy)"},
         {"name": "projects", "description": "Project management"},
+        {"name": "project-files", "description": "Project file CRUD endpoints"},
+        {"name": "project-versions", "description": "Project versioning (snapshot/restore)"},
+        {"name": "export", "description": "Export current project files as ZIP"},
         {"name": "chat", "description": "Chat sessions and messages"},
         {"name": "generation", "description": "Start AI generation and stream results over WebSocket"},
     ],
@@ -38,6 +42,9 @@ app.add_middleware(
 # Routers
 app.include_router(auth_router)
 app.include_router(projects_router)
+app.include_router(project_files_router)
+app.include_router(project_versions_router)
+app.include_router(export_router)
 app.include_router(chat_router)
 app.include_router(generate_router)
 
