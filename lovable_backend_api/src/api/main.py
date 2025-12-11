@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.config import get_settings
+from src.routers.auth import router as auth_router
+from src.routers.projects import router as projects_router
 
 # Initialize settings (loads from .env if present)
 settings = get_settings()
@@ -12,6 +14,8 @@ app = FastAPI(
     version="0.1.0",
     openapi_tags=[
         {"name": "health", "description": "Health and diagnostics"},
+        {"name": "auth", "description": "Authentication (dummy)"},
+        {"name": "projects", "description": "Project management"},
     ],
 )
 
@@ -23,6 +27,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Routers
+app.include_router(auth_router)
+app.include_router(projects_router)
 
 # PUBLIC_INTERFACE
 @app.get("/", tags=["health"], summary="Health Check", description="Simple health check endpoint to verify the API is running.")
