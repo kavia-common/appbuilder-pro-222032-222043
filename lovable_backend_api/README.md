@@ -14,23 +14,28 @@ Ports
 - Database (paired): 5000 (logical), actual example dev DB is SQLite; in production use Postgres.
 
 Setup
-1) Create environment file:
+1) Create environment file (optional for dev; sensible defaults are built-in):
    cp .env.example .env
    # edit values as needed
 
 2) Install dependencies:
    pip install -r requirements.txt
 
-3) Run (example with uvicorn):
+3) Run (recommended):
+   python run.py
+   # binds to 0.0.0.0 on BACKEND_PORT (default 3001)
+
+   or with uvicorn directly:
    uvicorn src.api.main:app --host 0.0.0.0 --port ${BACKEND_PORT:-3001} --reload
 
 Environment variables (see src/core/config.py)
-- DATABASE_URL: async driver URL (e.g., postgresql+asyncpg://user:pass@host:5432/dbname or sqlite+aiosqlite:///./dev.db)
-- FRONTEND_ORIGIN: allowed origin for CORS (e.g., http://localhost:3000)
+Defaults are provided for development so the service can start without a .env:
+- DATABASE_URL: async driver URL (default sqlite+aiosqlite:///./dev.db)
+- FRONTEND_ORIGIN: allowed origin for CORS (default http://localhost:3000)
 - BACKEND_PORT: backend port (default 3001)
-- STORAGE_DIR: local directory for exports/artifacts
-- PREVIEW_BASE_URL: e.g., http://localhost:3001/preview
-- JWT_SECRET: dev secret (do not use in prod)
+- STORAGE_DIR: local directory for exports/artifacts (default /tmp/lovable_storage)
+- PREVIEW_BASE_URL: e.g., http://localhost:3001/preview (default)
+- JWT_SECRET: dev secret (default dev-secret-not-for-prod; do not use in prod)
 
 Notes
 - Use an async DB driver in DATABASE_URL (postgresql+asyncpg, sqlite+aiosqlite).
